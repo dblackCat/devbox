@@ -4,7 +4,7 @@ FROM php:8.0-fpm-alpine
 USER root
 
 # Установка зависимостей
-RUN apk add --no-cache \
+RUN apk add \
     $PHPIZE_DEPS \
     linux-headers \
     curl \
@@ -45,16 +45,8 @@ RUN docker-php-ext-install -j$(nproc) \
     zip
 
 # Установка GD
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) gd
-
-# Установка PECL расширений
-RUN pecl install \
-    redis \
-    amqp \
-    && docker-php-ext-enable \
-    redis \
-    amqp
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
+    docker-php-ext-install -j$(nproc) gd
 
 # Установка Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -65,6 +57,7 @@ ARG GROUP_ID=1000
 RUN addgroup -g ${GROUP_ID} dev && \
     adduser -D -u ${USER_ID} -G dev dev && \
     chown -R dev:dev /var/www
+
 
 # Очистка
 RUN apk del .build-deps
