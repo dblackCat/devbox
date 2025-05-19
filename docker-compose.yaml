@@ -1,0 +1,120 @@
+x-podman:
+  in_pod: false
+  privileged: false
+  network_mode: bridge
+  pid: host
+  ipc: host
+  uts: host
+
+services:
+  nginx:
+    image: nginx:1.21-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./hosts:/var/www:ro
+      - ./hosts:/etc/nginx/hosts:ro
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - php82
+      - php80
+      - php74
+    networks:
+      - app-network
+
+  php82:
+    build:
+      context: ./config/php8.2
+      dockerfile: Dockerfile
+      args:
+        USER_ID: '${UID:-1000}'
+        GROUP_ID: '${UID:-1000}'
+    volumes:
+      - ./hosts:/var/www
+      - ./logs/php8.2:/var/log/php
+    environment:
+      - PHP_VERSION=8.2
+    ports:
+      - "9081:9000"
+    networks:
+      app-network:
+        aliases:
+          - php82
+          - php-fpm82
+
+  php80:
+    build:
+      context: ./config/php8.0
+      dockerfile: Dockerfile
+      args:
+        USER_ID: '${UID:-1000}'
+        GROUP_ID: '${UID:-1000}'
+    volumes:
+      - ./hosts:/var/www
+      - ./logs/php8.0:/var/log/php
+    environment:
+      - PHP_VERSION=8.0
+    ports:
+      - "9080:9000"
+    networks:
+      app-network:
+        aliases:
+          - php80
+          - php-fpm80
+
+  php74:
+    build:
+      context: ./config/php7.4
+      dockerfile: Dockerfile
+      args:
+        USER_ID: '${UID:-1000}'
+        GROUP_ID: '${UID:-1000}'
+    volumes:
+      - ./hosts:/var/www
+      - ./logs/php7.4:/var/log/php
+    environment:
+      - PHP_VERSION=7.4
+    ports:
+      - "9074:9000"
+    networks:
+      app-network:
+        aliases:
+          - php74
+          - php-fpm74
+
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./data/mysql:/var/lib/mysql:z
+      - ./config/mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    networks:
+      app-network:
+         aliases:
+          - mysql
+          - db
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      UPLOAD_LIMIT: 512M
+      MAX_EXECUTION_TIME: 600
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+    labels:
+          io.podman.auxbridge: "true"

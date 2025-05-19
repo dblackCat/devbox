@@ -1,0 +1,60 @@
+[PHP]
+; Основные настройки
+memory_limit = 1024M
+max_execution_time = 300
+max_input_time = 300
+post_max_size = 256M
+upload_max_filesize = 256M
+max_file_uploads = 20
+
+; Настройки для максимальной производительности
+realpath_cache_size = 4096K
+realpath_cache_ttl = 600
+opcache.enable = 1
+opcache.enable_cli = 1
+opcache.memory_consumption = 256
+opcache.interned_strings_buffer = 16
+opcache.max_accelerated_files = 10000
+opcache.validate_timestamps = 0
+opcache.revalidate_freq = 0
+opcache.fast_shutdown = 1
+opcache.jit = 1235
+opcache.jit_buffer_size = 128M
+
+; Настройки для отладки
+display_errors = Off
+display_startup_errors = Off
+log_errors = On
+error_log = /var/log/php_errors.log
+error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT
+
+; Настройки сессий
+session.gc_maxlifetime = 1440
+session.gc_probability = 1
+session.gc_divisor = 100
+session.save_handler = files
+session.save_path = "/tmp"
+
+; Настройки для работы с датами
+date.timezone = UTC
+
+; Настройки для работы с памятью
+default_socket_timeout = 60
+max_input_vars = 3000
+
+; Настройки для работы с MySQL
+mysql.allow_persistent = On
+mysqli.allow_persistent = On
+pdo_mysql.default_socket = /var/run/mysqld/mysqld.sock
+
+; Настройки для работы с Redis
+redis.session.locking_enabled = 1
+redis.session.lock_expire = 60
+redis.session.lock_wait_time = 10000
+redis.session.lock_retries = 10
+
+; Настройки для работы с GD
+gd.jpeg_ignore_warning = 1
+
+; Настройки для работы с ZIP
+zip.output_compression = Off
