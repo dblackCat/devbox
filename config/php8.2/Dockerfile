@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     nano \
     mc \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
 # Установка GD с поддержкой WebP

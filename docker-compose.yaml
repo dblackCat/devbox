@@ -23,26 +23,6 @@ services:
     networks:
       - app-network
 
-  # php82:
-  #   build:
-  #     context: ./config/php8.2
-  #     dockerfile: Dockerfile
-  #     args:
-  #       USER_ID: '${UID:-1000}'
-  #       GROUP_ID: '${UID:-1000}'
-  #   volumes:
-  #     - ./hosts:/var/www
-  #     - ./logs/php8.2:/var/log/php
-  #   environment:
-  #     - PHP_VERSION=8.2
-  #   ports:
-  #     - "9081:9000"
-  #   networks:
-  #     app-network:
-  #       aliases:
-  #         - php82
-  #         - php-fpm82
-
   php82:
     build:
       context: ./config/php8.2
