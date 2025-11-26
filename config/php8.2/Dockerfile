@@ -24,7 +24,6 @@ RUN apt-get update && apt-get install -y \
     unzip \
     nano \
     mc \
-    npm \
     && rm -rf /var/lib/apt/lists/*
 
 # Установка GD с поддержкой WebP
@@ -66,5 +65,9 @@ WORKDIR /var/www
 
 COPY php.ini /usr/local/etc/php/conf.d/custom.ini
 COPY php-fpm.conf /usr/local/etc/php-fpm.d/zzz-custom.conf
+
+RUN echo 'npm() { docker-compose exec -T nodejs npm "$@"; }' >> /home/dev/.bashrc
+RUN echo 'npx() { docker-compose exec -T nodejs npx "$@"; }' >> /home/dev/.bashrc
+RUN echo 'node() { docker-compose exec -T nodejs node "$@"; }' >> /home/dev/.bashrc
 
 CMD ["php-fpm"] 
