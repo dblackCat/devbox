@@ -13,8 +13,8 @@ services:
       - "80:80"
     volumes:
       - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./hosts:/var/www:ro
-      - ./hosts:/etc/nginx/hosts:ro
+      - ./hosts:/var/www
+      - ./hosts:/etc/nginx/hosts
       - ./logs/nginx:/var/log/nginx
     depends_on:
       - php82
@@ -27,12 +27,17 @@ services:
   nodejs:
     image: node:22.12-alpine
     working_dir: /var/www
+    build:
+        context: ./config/nodejs
+        dockerfile: Dockerfile
+        args:
+            USER_ID: '${USER_ID:-1000}'
+            GROUP_ID: '${GROUP_ID:-1000}'
     volumes:
       - ./hosts:/var/www
-      - /var/www/node_modules  # Изолируем node_modules
     ports:
-      - "5173:5173"  # Vite dev server порт
-      - "3000:3000"  # Дополнительный порт для приложений
+      - "5173:5173"
+      - "3000:3000"
     environment:
       - NODE_ENV=development
     command: ["tail", "-f", "/dev/null"]
@@ -43,12 +48,14 @@ services:
           - vites
 
   php82:
+    extra_hosts:
+    - "merchant.dvl.to:host-gateway"
     build:
       context: ./config/php8.2
       dockerfile: Dockerfile
       args:
-        USER_ID: '${UID:-1000}'
-        GROUP_ID: '${UID:-1000}'
+        USER_ID: '${USER_ID:-1000}'
+        GROUP_ID: '${GROUP_ID:-1000}'
     volumes:
       - ./hosts:/var/www
       - ./logs/php8.2:/var/log/php
@@ -67,8 +74,8 @@ services:
       context: ./config/php8.0
       dockerfile: Dockerfile
       args:
-        USER_ID: '${UID:-1000}'
-        GROUP_ID: '${UID:-1000}'
+        USER_ID: '${USER_ID:-1000}'
+        GROUP_ID: '${GROUP_ID:-1000}'
     volumes:
       - ./hosts:/var/www
       - ./logs/php8.0:/var/log/php
@@ -87,8 +94,8 @@ services:
       context: ./config/php7.4
       dockerfile: Dockerfile
       args:
-        USER_ID: '${UID:-1000}'
-        GROUP_ID: '${UID:-1000}'
+        USER_ID: '${USER_ID:-1000}'
+        GROUP_ID: '${GROUP_ID:-1000}'
     volumes:
       - ./hosts:/var/www
       - ./logs/php7.4:/var/log/php
@@ -108,8 +115,8 @@ services:
       - "3306:3306"
     volumes:
       - ./hosts:/var/www
-      - ./data/mysql:/var/lib/mysql:z
-      - ./config/mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - ./data/mysql:/var/lib/mysql
+      - ./config/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     networks:
