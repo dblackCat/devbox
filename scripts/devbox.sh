@@ -18,12 +18,10 @@ dv-restart() {
     cd "$PROJECT_ROOT" && sudo podman compose down && sudo podman compose up -d
 }
 
-# Функция для получения списка контейнеров
 dv-show() {
     echo "Доступные контейнеры:"
     echo "====================="
     
-    # Получаем список всех запущенных контейнеров
     local CONTAINERS=$(sudo podman ps --format "{{.Names}}" 2>/dev/null)
     
     if [ -z "$CONTAINERS" ]; then
@@ -32,42 +30,10 @@ dv-show() {
         return 1
     fi
     
-    # Извлекаем базовые имена контейнеров (убираем префикс и номер)
-    echo "$CONTAINERS" | sed -E 's/server-([a-zA-Z0-9]+)-[0-9]+/\1/' | sort | uniq | while read -r container; do
-        # Считаем количество экземпляров каждого контейнера
-        local count=$(echo "$CONTAINERS" | grep -c "server-${container}-")
-        echo "  $container ($count экземпляр(а/ов))"
-    done
-    
-    echo ""
-    echo "Все контейнеры (полные имена):"
-    echo "=============================="
     echo "$CONTAINERS" | sort
-    
-    echo ""
-    echo "Для просмотра всех контейнеров (включая остановленные):"
-    echo "  sudo podman ps -a"
+    echo "=============================="
 }
 
-# Функция для получения полного имени контейнера по короткому имени
-_get_container_full_name() {
-    local short_name="$1"
-    local full_name=$(sudo podman ps --format "{{.Names}}" | grep -E "server-${short_name}-[0-9]+" | head -1)
-    echo "$full_name"
-}
-
-# Функция для проверки существования контейнера
-_check_container_exists() {
-    local short_name="$1"
-    local full_name=$(_get_container_full_name "$short_name")
-    
-    if [ -z "$full_name" ]; then
-        echo "Ошибка: Контейнер с именем '$short_name' не найден или не запущен"
-        return 1
-    fi
-    
-    return 0
-}
 
 dv-run() {
     local ORIGINAL_DIR="$(pwd)"
@@ -75,26 +41,18 @@ dv-run() {
     if [ -z "$1" ] || [ -z "$2" ]; then
         echo "Ошибка: Не указан контейнер или команда"
         echo "Использование: dv-run <контейнер> <команда> [аргументы...]"
-        echo "Пример: dv-run php82 artisan migrate"
-        echo "Пример: dv-run nodejs npm run build"
         echo "Пример: dv-run php82 composer install"
+        echo "Пример: dv-run nodejs npm run build"
+        echo "Имена контейнеров соответствуют конфигурации dv-show"
         return 1
     fi
 
     local CONTAINER="$1"
+    echo "Контейнер $1"
     shift
     local COMMAND="$@"
-    
-    # Проверяем существование контейнера
-    if ! _check_container_exists "$CONTAINER"; then
-        echo ""
-        dv-show
-        cd "$ORIGINAL_DIR"
-        return 1
-    fi
-    
-    # Получаем полное имя контейнера
-    local CONTAINER_NAME=$(_get_container_full_name "$CONTAINER")
+
+    local CONTAINER_NAME=$1
     
     cd "$PROJECT_ROOT"
 
@@ -120,20 +78,11 @@ dv-logs() {
         echo "Ошибка: Не указано название контейнера"
         echo "Использование: dv-logs <название_контейнера> [--follow]"
         echo "Пример: dv-logs nginx --follow"
-        echo "Имена контейнеров соответствуют конфигурации docker-compose"
-        return 1
-    fi
-
-    # Проверяем существование контейнера
-    if ! _check_container_exists "$1"; then
-        echo ""
-        dv-show
-        cd "$ORIGINAL_DIR"
+        echo "Имена контейнеров соответствуют конфигурации dv-show"
         return 1
     fi
     
-    # Получаем полное имя контейнера
-    local CONTAINER_NAME=$(_get_container_full_name "$1")
+    local CONTAINER_NAME=$1
     
     cd "$PROJECT_ROOT"
     
@@ -154,21 +103,11 @@ dv-open() {
     if [ -z "$1" ]; then
         echo "Ошибка: Не указано название контейнера"
         echo "Использование: dv-open <название_контейнера>"
-        echo "Пример: dv-open php74|php80|php82|nodejs"
-        echo "Имена контейнеров соответствуют конфигурации docker-compose"
+        echo "Имена контейнеров соответствуют конфигурации dv-show"
         return 1
     fi
-    
-    # Проверяем существование контейнера
-    if ! _check_container_exists "$1"; then
-        echo ""
-        dv-show
-        cd "$ORIGINAL_DIR"
-        return 1
-    fi
-    
-    # Получаем полное имя контейнера
-    local CONTAINER_NAME=$(_get_container_full_name "$1")
+ 
+    local CONTAINER_NAME=$1
     
     cd "$PROJECT_ROOT"
     
