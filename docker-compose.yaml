@@ -17,6 +17,7 @@ services:
       - ./hosts:/etc/nginx/hosts
       - ./logs/nginx:/var/log/nginx
     depends_on:
+      - php84
       - php82
       - php80
       - php74
@@ -45,11 +46,38 @@ services:
       app-network:
         aliases:
           - nodejs
-          - vites
+          - vitesэ
+
+  php84:
+    extra_hosts:
+    - "fastex.dvl.to:host-gateway"
+    - "mrcard.dvl.to:host-gateway"
+    - "mario.dvl.to:host-gateway"
+    build:
+      context: ./config/php8.4
+      dockerfile: Dockerfile
+      args:
+        USER_ID: '${USER_ID:-1000}'
+        GROUP_ID: '${GROUP_ID:-1000}'
+    volumes:
+      - ./hosts:/var/www
+      - ./logs/php8.4:/var/log/php
+    environment:
+      - PHP_VERSION=8.4
+    ports:
+      - "9082:9000"
+    networks:
+      app-network:
+        aliases:
+          - php84
+          - php-fpm84
 
   php82:
     extra_hosts:
-    - "merchant.dvl.to:host-gateway"
+    - "fastex.dvl.to:host-gateway"
+    - "mrcard.dvl.to:host-gateway"
+    - "pik-td.dvl.to:host-gateway"
+    - "mario.dvl.to:host-gateway"
     build:
       context: ./config/php8.2
       dockerfile: Dockerfile
@@ -111,6 +139,7 @@ services:
 
   mysql:
     image: mysql:8.0
+    restart: unless-stopped
     ports:
       - "3306:3306"
     volumes:
