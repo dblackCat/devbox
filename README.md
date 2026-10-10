@@ -40,6 +40,11 @@ export DOCKER_HOST=unix:///run/user/$(id -u)/podman/podman.sock
 # just — статический бинарник, кладём в ~/.local/bin
 curl -sL https://github.com/casey/just/releases/latest/download/just-1.40.0-x86_64-unknown-linux-musl.tar.gz \
   | tar xz -C ~/.local/bin just
+
+# глобальный алиас box (управление из любого каталога)
+cat >> ~/.bashrc <<'EOF'
+alias box='just --justfile "$HOME/Workspace/Server/justfile" --working-directory "$HOME/Workspace/Server"'
+EOF
 ```
 
 Затем:
@@ -49,7 +54,18 @@ cp .env.example .env   # поправьте пароли при необходи
 just build             # собрать образы и запустить
 ```
 
-## Управление — `just`
+## Управление — `just` / `box`
+
+Внутри каталога окружения — `just` (см. `just --list`).
+**Из любого места системы** — алиас `box` (добавляется в `~/.bashrc`):
+
+```bash
+box up          # запуск стека
+box ps          # статус
+box sh mysql    # интерактивная сессия
+box logs php82  # логи
+box             # список всех рецептов
+```
 
 | Команда | Действие |
 |---|---|
