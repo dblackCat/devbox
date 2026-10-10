@@ -54,7 +54,7 @@ export const api = {
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ action })
 		}),
-	hosts: () => j<{ hosts: HostItem[]; zone: string }>('/api/hosts'),
+	hosts: () => j<{ hosts: HostItem[]; zone: string; phpVersions?: string[] }>('/api/hosts'),
 	createHost: (name: string, php: string) =>
 		j<{ ok: boolean; output?: string; error?: string }>('/api/hosts', {
 			method: 'POST',

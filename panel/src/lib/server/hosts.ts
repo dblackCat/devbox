@@ -1,11 +1,23 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { sh, SERVER_ROOT } from './sh';
+import { listContainers } from './podman';
 
 export interface Host {
 	name: string;
 	php: string;
 	https: boolean;
+}
+
+/** Доступные версии PHP — из запущенных контейнеров (server-php8X) */
+export async function phpVersions(): Promise<string[]> {
+	const containers = await listContainers();
+	const versions = new Set<string>();
+	for (const c of containers) {
+		const m = c.name.match(/^server-php(\d+)-\d+$/);
+		if (m) versions.add(m[1]);
+	}
+	return [...versions].sort();
 }
 
 export function listHosts(zone: string): Host[] {
@@ -25,8 +37,9 @@ export async function createHost(name: string, php: string): Promise<string> {
 	if (!/^[a-z0-9][a-z0-9-]{1,30}$/.test(name)) {
 		throw new Error('Имя: 2-31 символ, [a-z0-9-]');
 	}
-	if (!['80', '82', '84'].includes(php)) {
-		throw new Error('Поддерживаются php80, php82, php84');
+	const available = await phpVersions();
+	if (!available.includes(php)) {
+		throw new Error(`PHP ${php} недоступен. Доступны: ${available.join(', ')}`);
 	}
 	const exists = fs.existsSync(path.join(SERVER_ROOT, 'hosts', name));
 	if (exists) throw new Error(`Хост "${name}" уже существует`);

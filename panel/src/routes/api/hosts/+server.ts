@@ -1,11 +1,11 @@
 import { json } from '@sveltejs/kit';
-import { listHosts, createHost, applyHosts } from '$lib/server/hosts';
+import { listHosts, createHost, applyHosts, phpVersions } from '$lib/server/hosts';
 import { readEnv } from '$lib/server/env';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async () => {
 	const zone = readEnv().HOST_ZONE ?? 'dvl.to';
-	return json({ hosts: listHosts(zone), zone });
+	return json({ hosts: listHosts(zone), zone, phpVersions: await phpVersions() });
 };
 
 export const POST: RequestHandler = async ({ request }) => {

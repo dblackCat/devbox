@@ -8,8 +8,9 @@
 
 	let hosts = $state<HostItem[]>([]);
 	let zone = $state('dvl.to');
+	let phpVersions = $state<string[]>([]);
+	let php = $state('');
 	let name = $state('');
-	let php = $state('82');
 	let creating = $state(false);
 	let formError = $state('');
 	let banner = $state<{ text: string; needApply: boolean } | null>(null);
@@ -21,6 +22,8 @@
 		const r = await api.hosts();
 		hosts = r.hosts;
 		zone = r.zone;
+		phpVersions = r.phpVersions?.length ? r.phpVersions : ['82'];
+		if (!phpVersions.includes(php)) php = phpVersions.includes('82') ? '82' : phpVersions[0];
 	}
 
 	async function create() {
@@ -71,7 +74,11 @@
 		<Input label="Имя хоста" bind:value={name} placeholder="my-project" error={formError} suffix={`.${zone}`} />
 	</div>
 	<div class="w-36">
-		<Select label="PHP" bind:value={php} options={[{ value: '80', label: 'PHP 8.0' }, { value: '82', label: 'PHP 8.2' }, { value: '84', label: 'PHP 8.4' }]} />
+		<Select
+			label="PHP"
+			bind:value={php}
+			options={phpVersions.map((v) => ({ value: v, label: `PHP ${v}` }))}
+		/>
 	</div>
 	<Button type="submit" variant="primary" loading={creating} disabled={!name}>+ Создать</Button>
 </form>
