@@ -1,18 +1,13 @@
-x-podman:
-  in_pod: false
-  privileged: false
-  network_mode: bridge
-  pid: host
-  ipc: host
-  uts: host
-
 services:
   nginx:
-    image: nginx:1.21-alpine
+    image: nginx:1.27-alpine
     ports:
-      - "80:80"
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
     volumes:
       - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./config/nginx/panel.conf:/etc/nginx/panel.conf:ro
+      - ./config/nginx/ssl:/etc/nginx/ssl:ro
       - ./hosts:/var/www
       - ./hosts:/etc/nginx/hosts
       - ./logs/nginx:/var/log/nginx
@@ -20,20 +15,16 @@ services:
       - php84
       - php82
       - php80
-      - php74
-      - nodejs
     networks:
-      - app-network
+      app-network:
+        # алиасы *.dvl.to генерируются scripts/sync-hosts.sh
+        # в docker-compose.aliases.yaml (для вебхуков между хостами)
 
   nodejs:
-    image: node:22.12-alpine
-    working_dir: /var/www
     build:
-        context: ./config/nodejs
-        dockerfile: Dockerfile
-        args:
-            USER_ID: '${USER_ID:-1000}'
-            GROUP_ID: '${GROUP_ID:-1000}'
+      context: ./config/nodejs
+      dockerfile: Dockerfile
+    working_dir: /var/www
     volumes:
       - ./hosts:/var/www
     ports:
@@ -46,24 +37,18 @@ services:
       app-network:
         aliases:
           - nodejs
-          - vitesэ
+          - vite
 
   php84:
-    extra_hosts:
-    - "fastex.dvl.to:host-gateway"
-    - "mrcard.dvl.to:host-gateway"
-    - "mario.dvl.to:host-gateway"
     build:
       context: ./config/php8.4
       dockerfile: Dockerfile
-      args:
-        USER_ID: '${USER_ID:-1000}'
-        GROUP_ID: '${GROUP_ID:-1000}'
     volumes:
       - ./hosts:/var/www
       - ./logs/php8.4:/var/log/php
     environment:
       - PHP_VERSION=8.4
+      - XDEBUG_MODE=${XDEBUG_MODE:-off}
     ports:
       - "9082:9000"
     networks:
@@ -73,22 +58,15 @@ services:
           - php-fpm84
 
   php82:
-    extra_hosts:
-    - "fastex.dvl.to:host-gateway"
-    - "mrcard.dvl.to:host-gateway"
-    - "pik-td.dvl.to:host-gateway"
-    - "mario.dvl.to:host-gateway"
     build:
       context: ./config/php8.2
       dockerfile: Dockerfile
-      args:
-        USER_ID: '${USER_ID:-1000}'
-        GROUP_ID: '${GROUP_ID:-1000}'
     volumes:
       - ./hosts:/var/www
       - ./logs/php8.2:/var/log/php
     environment:
       - PHP_VERSION=8.2
+      - XDEBUG_MODE=${XDEBUG_MODE:-off}
     ports:
       - "9081:9000"
     networks:
@@ -101,14 +79,12 @@ services:
     build:
       context: ./config/php8.0
       dockerfile: Dockerfile
-      args:
-        USER_ID: '${USER_ID:-1000}'
-        GROUP_ID: '${GROUP_ID:-1000}'
     volumes:
       - ./hosts:/var/www
       - ./logs/php8.0:/var/log/php
     environment:
       - PHP_VERSION=8.0
+      - XDEBUG_MODE=${XDEBUG_MODE:-off}
     ports:
       - "9080:9000"
     networks:
@@ -117,42 +93,49 @@ services:
           - php80
           - php-fpm80
 
-  php74:
-    build:
-      context: ./config/php7.4
-      dockerfile: Dockerfile
-      args:
-        USER_ID: '${USER_ID:-1000}'
-        GROUP_ID: '${GROUP_ID:-1000}'
-    volumes:
-      - ./hosts:/var/www
-      - ./logs/php7.4:/var/log/php
-    environment:
-      - PHP_VERSION=7.4
-    ports:
-      - "9074:9000"
-    networks:
-      app-network:
-        aliases:
-          - php74
-          - php-fpm74
-
   mysql:
     image: mysql:8.0
     restart: unless-stopped
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT:-3306}:3306"
     volumes:
-      - ./hosts:/var/www
       - ./data/mysql:/var/lib/mysql
       - ./config/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
     networks:
       app-network:
-         aliases:
+        aliases:
           - mysql
           - db
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    ports:
+      - "${PG_PORT:-5432}:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
+    networks:
+      app-network:
+        aliases:
+          - postgres
+          - pg
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - ./data/redis:/data
+    networks:
+      app-network:
+        aliases:
+          - redis
 
   manticore:
     image: manticoresearch/manticore:7.4.6
@@ -172,27 +155,54 @@ services:
     depends_on:
       - mysql
     networks:
-      - app-network
+      app-network:
+        aliases:
+          - manticore
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"   # Web UI
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"   # SMTP
+    environment:
+      MP_DATABASE: /data/mailpit.db
+    volumes:
+      - ./data/mailpit:/data
+    networks:
+      app-network:
+        aliases:
+          - mailpit
+          - mailhog   # совместимость со старыми настройками проектов
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     ports:
-      - "8080:80"
+      - "${PMA_PORT:-8080}:80"
     environment:
       PMA_HOST: mysql
       PMA_USER: root
-      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
       UPLOAD_LIMIT: 512M
       MAX_EXECUTION_TIME: 600
     depends_on:
       - mysql
     networks:
-      - app-network
+      app-network:
+        aliases:
+          - phpmyadmin
 
-
+  adminer:
+    image: adminer:latest
+    ports:
+      - "${ADMINER_PORT:-8081}:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql
+    networks:
+      app-network:
+        aliases:
+          - adminer
 
 networks:
   app-network:
     driver: bridge
-    labels:
-          io.podman.auxbridge: "true"

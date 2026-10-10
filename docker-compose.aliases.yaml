@@ -1,0 +1,37 @@
+# Автогенерация scripts/sync-hosts.sh — не редактировать вручную
+services:
+  nginx:
+    networks:
+      app-network:
+        aliases:
+          - batyrev.dvl.to
+          - bravom.dvl.to
+          - bullfinch.dvl.to
+          - cat-design.dvl.to
+          - cd-svelte.dvl.to
+          - crm.dvl.to
+          - dispatcher.dvl.to
+          - fastex.dvl.to
+          - fastex-form.dvl.to
+          - gold-seed.dvl.to
+          - gostishka.dvl.to
+          - letoshop.dvl.to
+          - linto.dvl.to
+          - mario.dvl.to
+          - megamoto.dvl.to
+          - moonshine.dvl.to
+          - mrcard.dvl.to
+          - mrcard-form.dvl.to
+          - navitel.dvl.to
+          - pik-auth.dvl.to
+          - pik-td.dvl.to
+          - pik-td-users.dvl.to
+          - plenka-odissey.dvl.to
+          - premium-bike.dvl.to
+          - quick-chat.dvl.to
+          - quick-chat-tg.dvl.to
+          - seedsman.dvl.to
+          - sharp.dvl.to
+          - test.dvl.to
+          - ui-kit.dvl.to
+          - vogerus.dvl.to

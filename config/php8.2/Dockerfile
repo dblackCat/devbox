@@ -1,9 +1,5 @@
 FROM php:8.2-fpm
 
-# Установка инструментов от root
-USER root
-
-# Установка зависимостей
 RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
@@ -26,14 +22,12 @@ RUN apt-get update && apt-get install -y \
     mc \
     && rm -rf /var/lib/apt/lists/*
 
-# Установка GD с поддержкой WebP
 RUN docker-php-ext-configure gd \
     --with-freetype \
     --with-jpeg \
     --with-webp \
     && docker-php-ext-install -j$(nproc) gd
 
-# Установка базовых расширений
 RUN docker-php-ext-install -j$(nproc) \
     bcmath \
     calendar \
@@ -49,25 +43,14 @@ RUN docker-php-ext-install -j$(nproc) \
     sockets \
     zip
 
-# Установка Composer
+RUN pecl install xdebug && docker-php-ext-enable xdebug
+
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Настройка пользователя
-ARG USER_ID=1000
-ARG GROUP_ID=1000
-RUN groupadd -g ${GROUP_ID} dev && \
-    useradd -u ${USER_ID} -g dev -m dev && \
-    chown -R dev:dev /var/www
-
-# Переключение на пользователя
-USER dev
 WORKDIR /var/www
 
 COPY php.ini /usr/local/etc/php/conf.d/custom.ini
 COPY php-fpm.conf /usr/local/etc/php-fpm.d/zzz-custom.conf
+COPY xdebug.ini /usr/local/etc/php/conf.d/zz-xdebug.ini
 
-RUN echo 'npm() { docker-compose exec -T nodejs npm "$@"; }' >> /home/dev/.bashrc
-RUN echo 'npx() { docker-compose exec -T nodejs npx "$@"; }' >> /home/dev/.bashrc
-RUN echo 'node() { docker-compose exec -T nodejs node "$@"; }' >> /home/dev/.bashrc
-
-CMD ["php-fpm"] 
+CMD ["php-fpm", "-R"]
