@@ -47,6 +47,31 @@ function sanitize(rel: string): string | null {
 	return abs;
 }
 
+/** Очистка логов: truncate без удаления файлов (процессы продолжают писать в те же inode).
+ *  target = путь файла из списка | 'all' — все файлы в logs/. Журнал панели очистить нельзя. */
+export const POST: RequestHandler = async ({ request }) => {
+	const { target } = await request.json();
+	const cleared: string[] = [];
+
+	const targets =
+		target === 'all'
+			? fs
+					.readdirSync(LOGS_ROOT, { recursive: true })
+					.filter((f) => {
+						const abs = path.join(LOGS_ROOT, f as string);
+						return fs.statSync(abs).isFile() && !path.basename(abs).startsWith('.');
+					})
+					.map((f) => path.join(LOGS_ROOT, f as string))
+			: [sanitize(String(target))].filter((v): v is string => v !== null && v !== 'panel');
+
+	if (!targets.length) return json({ ok: false, error: 'Нечего очищать' }, { status: 400 });
+	for (const abs of targets) {
+		fs.truncateSync(abs, 0);
+		cleared.push(path.relative(LOGS_ROOT, abs));
+	}
+	return json({ ok: true, cleared });
+};
+
 async function readFile(rel: string, download: boolean, tail?: string | null) {
 	const safe = sanitize(rel);
 	if (!safe) return new Response('not found', { status: 404 });

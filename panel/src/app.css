@@ -13,6 +13,10 @@
 			ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
 			sans-serif;
 	}
+	/* все активные кнопки — рука (tailwind 4 сбрасывает cursor у button) */
+	button:not(:disabled) {
+		cursor: pointer;
+	}
 	::selection {
 		@apply bg-emerald-500/30;
 	}
