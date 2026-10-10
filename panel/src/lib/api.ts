@@ -13,6 +13,7 @@ export interface ToolLink {
 	title: string;
 	desc: string;
 	url: string;
+	loginUrl: string;
 	creds: { k: string; v: string }[];
 }
 

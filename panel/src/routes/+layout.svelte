@@ -4,16 +4,17 @@
 	import { onMount } from 'svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import Button from '$lib/components/Button.svelte';
-	import { api, pollJob, type Job } from '$lib/api';
+	import Icon from '$lib/components/Icon.svelte';
+	import { api, pollJob, type Job, type ToolLink } from '$lib/api';
 
 	let { children } = $props();
 
 	// --- состояние стека (шапка) ---
 	let upCount = $state(0);
 	let totalCount = $state(0);
+	let tools = $state<ToolLink[]>([]);
 	let confirmAction = $state<string | null>(null);
 	let runningJob = $state<Job | null>(null);
-	let jobError = $state('');
 
 	const CONFIRMS: Record<string, { title: string; message: string; label: string }> = {
 		restart: {
@@ -35,6 +36,15 @@
 		}
 	};
 
+	const NAV = [
+		{ href: '/', label: 'Dashboard', icon: 'grid' },
+		{ href: '/containers', label: 'Containers', icon: 'box' },
+		{ href: '/logs', label: 'Logs', icon: 'file' },
+		{ href: '/hosts', label: 'Hosts', icon: 'globe' }
+	];
+
+	const TOOL_ICONS: Record<string, string> = { pma: 'db', adminer: 'table', mailpit: 'mail' };
+
 	async function refreshStack() {
 		try {
 			const { containers } = await api.containers();
@@ -45,48 +55,70 @@
 		}
 	}
 
+	onMount(() => {
+		refreshStack();
+		api.info().then((i) => (tools = i.tools)).catch(() => {});
+		const t = setInterval(refreshStack, 10_000);
+		return () => clearInterval(t);
+	});
+
 	async function runAction() {
 		const action = confirmAction!;
 		confirmAction = null;
-		jobError = '';
 		try {
 			const { jobId } = await api.startStack(action);
 			runningJob = await pollJob(jobId, (j) => (runningJob = { ...j }));
-			if (runningJob.status === 'error') jobError = `Ошибка: ${action}`;
-		} catch (e) {
-			jobError = String(e);
+		} catch {
+			/* job-индикатор сам покажет ошибку */
 		}
 		await refreshStack();
 		setTimeout(() => (runningJob = null), 8000);
 	}
-
-	const nav = [
-		{ href: '/', label: 'Dashboard' },
-		{ href: '/containers', label: 'Containers' },
-		{ href: '/logs', label: 'Logs' },
-		{ href: '/hosts', label: 'Hosts' }
-	];
-	onMount(() => {
-		refreshStack();
-		const t = setInterval(refreshStack, 10_000);
-		return () => clearInterval(t);
-	});
 </script>
 
 <div class="min-h-screen">
 	<header class="sticky top-0 z-40 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">
-		<div
-			class="mx-auto max-w-5xl px-4 h-[52px] flex items-center gap-4"
-		>
+		<!-- строка 1: лого + индикатор + быстрые ссылки инструментов -->
+		<div class="mx-auto max-w-5xl px-4 h-10 flex items-center gap-3">
 			<a href="/" class="flex items-center gap-2 shrink-0">
-				<span class="size-2 rounded-full {upCount === totalCount && totalCount > 0 ? 'bg-emerald-400' : 'bg-red-400'}"></span>
+				<span
+					class="size-2 rounded-full {upCount === totalCount && totalCount > 0
+						? 'bg-emerald-400'
+						: 'bg-red-400'}"
+				></span>
 				<span class="font-semibold text-zinc-100">DevBox</span>
-				<span class="mono text-xs text-zinc-500 hidden sm:inline">{upCount}/{totalCount}</span>
+				<span class="mono text-xs text-zinc-500">{upCount}/{totalCount}</span>
 			</a>
 
+			<div class="flex-1"></div>
+
 			<nav class="flex items-center gap-1">
-				{#each nav as n (n.href)}
-					<a href={n.href} class="nav-link {page.url.pathname === n.href ? 'nav-link-active' : ''}">
+				{#each tools as t (t.id)}
+					<a
+						href={t.loginUrl}
+						target="_blank"
+						rel="noreferrer"
+						class="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-400
+							hover:text-zinc-100 hover:bg-zinc-800/60 transition-colors"
+						title={t.url + (t.id === 'pma' ? ' · автовход' : '')}
+					>
+						<Icon name={TOOL_ICONS[t.id] ?? 'db'} size={13} />
+						{t.title}
+						↗
+					</a>
+				{/each}
+			</nav>
+		</div>
+
+		<!-- строка 2: меню страниц + глобальные действия -->
+		<div class="mx-auto max-w-5xl px-4 h-11 flex items-center gap-4 border-t border-zinc-800/60">
+			<nav class="flex items-center gap-1">
+				{#each NAV as n (n.href)}
+					<a
+						href={n.href}
+						class="nav-link flex items-center gap-1.5 {page.url.pathname === n.href ? 'nav-link-active' : ''}"
+					>
+						<Icon name={n.icon} size={13} />
 						{n.label}
 					</a>
 				{/each}
@@ -103,9 +135,15 @@
 						{runningJob.action}…
 					</span>
 				{/if}
-				<Button variant="ghost" size="sm" onclick={() => (confirmAction = 'restart')}>↻ Restart</Button>
-				<Button variant="ghost" size="sm" onclick={() => (confirmAction = 'build')}>⟳ Rebuild</Button>
-				<Button variant="ghost" size="sm" onclick={() => (confirmAction = 'stop')}>■ Stop</Button>
+				<Button variant="ghost" size="sm" onclick={() => (confirmAction = 'restart')}>
+					<Icon name="rotate" size={12} /> Restart
+				</Button>
+				<Button variant="ghost" size="sm" onclick={() => (confirmAction = 'build')}>
+					<Icon name="hammer" size={12} /> Rebuild
+				</Button>
+				<Button variant="ghost" size="sm" onclick={() => (confirmAction = 'stop')}>
+					<Icon name="square" size={12} /> Stop
+				</Button>
 			</div>
 		</div>
 	</header>

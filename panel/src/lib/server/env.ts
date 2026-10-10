@@ -19,6 +19,8 @@ export interface ToolLink {
 	title: string;
 	desc: string;
 	url: string;
+	/** Ссылка с параметрами автовхода/предзаполнения */
+	loginUrl: string;
 	creds: { k: string; v: string }[];
 }
 
@@ -35,6 +37,8 @@ export function info() {
 				title: 'phpMyAdmin',
 				desc: 'MySQL · веб-интерфейс',
 				url: `http://localhost:${p('PMA_PORT', 8080)}`,
+				// полный автовход (логин+пароль передаются в GET)
+				loginUrl: `http://localhost:${p('PMA_PORT', 8080)}/?pma_username=root&pma_password=${encodeURIComponent(p('MYSQL_ROOT_PASSWORD', 'root'))}`,
 				creds: [
 					{ k: 'Сервер', v: 'mysql' },
 					{ k: 'Логин', v: 'root' },
@@ -46,6 +50,8 @@ export function info() {
 				title: 'Adminer',
 				desc: 'MySQL + PostgreSQL',
 				url: `http://localhost:${p('ADMINER_PORT', 8081)}`,
+				// пароль Adminer из GET не принимает — предзаполняем сервер/логин
+				loginUrl: `http://localhost:${p('ADMINER_PORT', 8081)}/?server=mysql&username=root`,
 				creds: [
 					{ k: 'MySQL', v: 'root / ' + p('MYSQL_ROOT_PASSWORD', 'root') },
 					{ k: 'PostgreSQL', v: 'postgres / ' + p('POSTGRES_PASSWORD', 'root') }
@@ -56,6 +62,7 @@ export function info() {
 				title: 'Mailpit',
 				desc: 'Перехват почты',
 				url: `http://localhost:${p('MAILPIT_UI_PORT', 8025)}`,
+				loginUrl: `http://localhost:${p('MAILPIT_UI_PORT', 8025)}`,
 				creds: [
 					{ k: 'SMTP', v: `mailpit:${p('MAILPIT_SMTP_PORT', 1025)} (без авторизации)` }
 				]
