@@ -72,12 +72,19 @@ export const api = {
 	job: (id: string) => j<Job>(`/api/stack?id=${id}`)
 };
 
-/** Опрос job'а до завершения */
+/** Опрос job'а до завершения. Сетевые сбои (рестарт nginx и т.п.) ретраятся до 15с */
 export async function pollJob(id: string, onTick: (job: Job) => void, everyMs = 1000): Promise<Job> {
+	let failures = 0;
 	for (;;) {
-		const job = await api.job(id);
-		onTick(job);
-		if (job.status !== 'running') return job;
+		try {
+			const job = await api.job(id);
+			failures = 0;
+			onTick(job);
+			if (job.status !== 'running') return job;
+		} catch {
+			// соединение потеряно (nginx перезапускается/останавливается) — пробуем дальше
+			if (++failures > 15) throw new Error('потеряна связь с панелью');
+		}
 		await new Promise((r) => setTimeout(r, everyMs));
 	}
 }

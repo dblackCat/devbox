@@ -17,6 +17,11 @@
 	let runningJob = $state<Job | null>(null);
 
 	const CONFIRMS: Record<string, { title: string; message: string; label: string }> = {
+		up: {
+			title: 'Запустить окружение?',
+			message: 'Стек будет запущен (образы уже собраны). Займёт 10–30 секунд.',
+			label: 'Запустить'
+		},
 		restart: {
 			title: 'Перезапустить окружение?',
 			message: 'Все контейнеры будут перезапущены. Займёт ~10–20 секунд.',
@@ -31,7 +36,7 @@
 		stop: {
 			title: 'Остановить окружение?',
 			message:
-				'Все контейнеры будут остановлены, сайты и БД станут недоступны. Панель по http://localhost тоже погаснет — вернуть: прямой доступ http://localhost:8989 или just up.',
+				'Все контейнеры будут остановлены (займёт до минуты), сайты и БД станут недоступны. Панель по http://localhost тоже погаснет — вернуть: прямой доступ http://localhost:8989 и кнопка запуска, или just up.',
 			label: 'Остановить'
 		}
 	};
@@ -62,16 +67,41 @@
 		return () => clearInterval(t);
 	});
 
+	// --- таймер выполняемого job'а ---
+	let elapsed = $state(0);
+	let elapsedTimer: ReturnType<typeof setInterval> | undefined;
+
+	$effect(() => {
+		if (runningJob?.status === 'running') {
+			elapsed = Math.round((Date.now() - runningJob.startedAt) / 1000);
+			clearInterval(elapsedTimer);
+			elapsedTimer = setInterval(() => (elapsed = Math.round((Date.now() - runningJob!.startedAt) / 1000)), 1000);
+		} else {
+			clearInterval(elapsedTimer);
+		}
+		return () => clearInterval(elapsedTimer);
+	});
+
 	async function runAction() {
 		const action = confirmAction!;
 		confirmAction = null;
 		try {
-			const { jobId } = await api.startStack(action);
-			runningJob = await pollJob(jobId, (j) => (runningJob = { ...j }));
+			const res = await api.startStack(action);
+			if (!res.jobId) throw new Error(res.error ?? 'не удалось запустить действие');
+			runningJob = await pollJob(res.jobId, (j) => (runningJob = { ...j }));
 		} catch {
-			/* job-индикатор сам покажет ошибку */
+			// при stop/down nginx гаснет вместе со стеком — потеря связи это ожидаемый исход,
+			// для остальных действий (up/restart/build) поллинг уже ретраился 15с — это реальная ошибка
+			const expected = action === 'stop' || action === 'down';
+			runningJob = {
+				id: 'err',
+				action,
+				status: expected ? 'done' : 'error',
+				output: expected ? 'окружение останавливается — панель: localhost:8989' : 'потеряна связь',
+				startedAt: Date.now()
+			};
 		}
-		await refreshStack();
+		await refreshStack().catch(() => {});
 		setTimeout(() => (runningJob = null), 8000);
 	}
 </script>
@@ -131,9 +161,16 @@
 					<span class="badge {runningJob.status === 'error' ? 'badge-down' : 'badge-warn'}">
 						{#if runningJob.status === 'running'}
 							<span class="size-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+							{runningJob.action} {elapsed}s…
+						{:else}
+							{runningJob.action} {runningJob.status === 'done' ? '✓' : '✗'}
 						{/if}
-						{runningJob.action}…
 					</span>
+				{/if}
+				{#if totalCount === 0}
+					<Button variant="primary" size="sm" onclick={() => (confirmAction = 'up')}>
+						▶ Start
+					</Button>
 				{/if}
 				<Button variant="ghost" size="sm" onclick={() => (confirmAction = 'restart')}>
 					<Icon name="rotate" size={12} /> Restart

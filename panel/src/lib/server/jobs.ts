@@ -28,17 +28,21 @@ function spawnJob(action: string, cmd: string): Job {
 	child.stderr.on('data', push);
 	child.on('close', (code) => {
 		job.status = code === 0 ? 'done' : 'error';
+		if (code !== 0) {
+			console.error(`[job ${job.id}] ${job.action} exit=${code}\n${job.output}`);
+		}
 	});
 	return job;
 }
 
 const STACK_COMMANDS: Record<string, string> = {
 	up: 'podman compose up -d && podman compose restart nginx',
-	down: 'podman compose down',
+	stop: 'podman compose stop',
+	down: 'podman compose stop', // алиас для CLI/скриптов
 	restart: 'podman compose restart',
 	build: 'podman compose build --no-cache && podman compose up -d && podman compose restart nginx',
-	xdebug_on: "just xdebug debug || true",
-	xdebug_off: "just xdebug off || true"
+	xdebug_on: 'just xdebug debug || true',
+	xdebug_off: 'just xdebug off || true'
 };
 
 export function startStackJob(action: string): Job {
