@@ -1,4 +1,5 @@
 import { sh } from '$lib/server/sh';
+import { engine } from '$lib/server/engine';
 import type { RequestHandler } from './$types';
 
 /** Логи контейнера: ?tail=200 — срез, ?follow=1 — SSE-стрим */
@@ -9,7 +10,7 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
 
 	if (url.searchParams.get('follow')) {
 		const { spawn } = await import('node:child_process');
-		const child = spawn('/bin/bash', ['-lc', `podman logs -f --tail ${tail} ${name}`]);
+		const child = spawn('/bin/bash', ['-lc', `${engine()} logs -f --tail ${tail} ${name}`]);
 		const stream = new ReadableStream({
 			start(controller) {
 				const enc = new TextEncoder();
@@ -32,7 +33,7 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
 		});
 	}
 
-	const { stdout, stderr } = await sh(`podman logs --tail ${tail} ${name} 2>&1`);
+	const { stdout, stderr } = await sh(`${engine()} logs --tail ${tail} ${name} 2>&1`);
 	return new Response(stdout || stderr || '(пусто)', {
 		headers: { 'Content-Type': 'text/plain; charset=utf-8' }
 	});

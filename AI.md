@@ -16,8 +16,9 @@
 ## Выполнение команд
 
 Все `podman compose` — из `~/Workspace/Server`. Пароль БД — из `~/Workspace/Server/.env`.
-В justfile движок определяется автоматически (podman, иначе docker; переопределяется
-переменной `DEVBOX_ENGINE`), так что `just up` и остальные рецепты работают в обоих случаях.
+В justfile и панели движок определяется автоматически (podman, иначе docker)
+или берётся из `ENGINE` в `.env` окружения, так что `just up` и остальные рецепты
+работают в обоих случаях.
 
 ```bash
 export DOCKER_HOST=unix:///run/user/1000/podman/podman.sock

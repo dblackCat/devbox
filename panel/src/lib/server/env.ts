@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { SERVER_ROOT } from './sh';
+import { engine } from './engine';
 
 /** Прочитать .env окружения в объект */
 export function readEnv(): Record<string, string> {
@@ -42,6 +43,7 @@ export function info() {
 	return {
 		zone: env.HOST_ZONE ?? 'dvl.to',
 		xdebugMode: env.XDEBUG_MODE ?? 'off',
+		engine: engine(),
 		tools: <ToolLink[]>[
 			{
 				id: 'pma',

@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { SERVER_ROOT } from './sh';
+import { engine } from './engine';
 
 export interface Job {
 	id: string;
@@ -35,18 +36,20 @@ function spawnJob(action: string, cmd: string): Job {
 	return job;
 }
 
-const STACK_COMMANDS: Record<string, string> = {
-	up: 'podman compose up -d && podman compose restart nginx',
-	stop: 'podman compose stop',
-	down: 'podman compose stop', // алиас для CLI/скриптов
-	restart: 'podman compose restart',
-	build: 'podman compose build --no-cache && podman compose up -d && podman compose restart nginx',
-	xdebug_on: 'just xdebug debug || true',
-	xdebug_off: 'just xdebug off || true'
+/** Команды строятся при запуске — ENGINE из .env подхватывается без рестарта панели */
+const STACK_COMMANDS: Record<string, () => string> = {
+	up: () => `${engine()} compose up -d && ${engine()} compose restart nginx`,
+	stop: () => `${engine()} compose stop`,
+	down: () => `${engine()} compose stop`, // алиас для CLI/скриптов
+	restart: () => `${engine()} compose restart`,
+	build: () =>
+		`${engine()} compose build --no-cache && ${engine()} compose up -d && ${engine()} compose restart nginx`,
+	xdebug_on: () => 'just xdebug debug || true',
+	xdebug_off: () => 'just xdebug off || true'
 };
 
 export function startStackJob(action: string): Job {
-	const cmd = STACK_COMMANDS[action];
+	const cmd = STACK_COMMANDS[action]?.();
 	if (!cmd) throw new Error(`Неизвестное действие: ${action}`);
 	return spawnJob(action, cmd);
 }

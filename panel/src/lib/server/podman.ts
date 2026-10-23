@@ -1,4 +1,5 @@
 import { sh } from './sh';
+import { engine } from './engine';
 
 export interface Container {
 	name: string;
@@ -11,7 +12,7 @@ export interface Container {
 /** Список контейнеров окружения (server-*) */
 export async function listContainers(): Promise<Container[]> {
 	const { stdout } = await sh(
-		`podman ps -a --filter name=server- --format '{{.Names}}\\t{{.Image}}\\t{{.State}}\\t{{.Status}}\\t{{.Ports}}'`
+		`${engine()} ps -a --filter name=server- --format '{{.Names}}\\t{{.Image}}\\t{{.State}}\\t{{.Status}}\\t{{.Ports}}'`
 	);
 	return stdout
 		.split('\n')
@@ -34,5 +35,5 @@ export async function containerAction(name: string, action: string) {
 	if (!/^server-[a-z0-9-]+$/.test(name) || !['start', 'stop', 'restart'].includes(action)) {
 		throw new Error('bad request');
 	}
-	await sh(`podman ${action} ${name}`);
+	await sh(`${engine()} ${action} ${name}`);
 }

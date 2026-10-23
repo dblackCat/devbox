@@ -46,7 +46,7 @@ async function j<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-	info: () => j<{ zone: string; xdebugMode: string; tools: ToolLink[]; connections: Connection[] }>('/api/info'),
+	info: () => j<{ zone: string; xdebugMode: string; engine: string; tools: ToolLink[]; connections: Connection[] }>('/api/info'),
 	containers: () => j<{ containers: Container[] }>('/api/containers'),
 	containerAction: (name: string, action: string) =>
 		j<{ ok: boolean }>(`/api/containers/${name}/action`, {

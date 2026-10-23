@@ -9,6 +9,7 @@
 	let connections = $state<Connection[]>([]);
 	let containers = $state<Container[]>([]);
 	let xdebugMode = $state('off');
+	let engineName = $state('');
 	let xdebugBusy = $state(false);
 
 	onMount(load);
@@ -18,6 +19,7 @@
 		tools = info.tools;
 		connections = info.connections;
 		xdebugMode = info.xdebugMode;
+		engineName = info.engine;
 		const { containers: c } = await api.containers();
 		containers = c;
 	}
@@ -54,7 +56,7 @@
 		Xdebug: {xdebugBusy ? '…' : xdebugMode} ⇄
 	</button>
 	<span class="flex-1"></span>
-	<span class="text-xs text-zinc-600">окружение rootless · podman compose</span>
+	<span class="text-xs text-zinc-600">окружение · {engineName || '…'} compose</span>
 </div>
 
 <!-- инструменты -->

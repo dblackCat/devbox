@@ -35,6 +35,8 @@
 ## Серверные правила
 
 - Shell-команды — через `sh()` из `$lib/server/sh` (login-shell: получает PATH и DOCKER_HOST из ~/.bashrc).
+- Контейнерный движок — только через `engine()` из `$lib/server/engine` (ENGINE из .env окружения,
+  иначе автоопределение podman/docker). Не хардкодить `podman` в командах и UI.
 - Пароли/порты читать из `.env` окружения (`readEnv()`), не хардкодить.
 - Имена контейнеров валидировать (`/^server-[a-z0-9-]+$/`) перед передачей в shell.
 - Долгие операции (up/build) — через jobs (`$lib/server/jobs`), опрос `GET /api/stack?id=`.

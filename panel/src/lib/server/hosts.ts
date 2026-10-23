@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { sh, SERVER_ROOT } from './sh';
 import { listContainers } from './podman';
+import { engine } from './engine';
 
 export interface Host {
 	name: string;
@@ -49,6 +50,6 @@ export async function createHost(name: string, php: string): Promise<string> {
 
 /** Применить новые алиасы: пересоздать nginx */
 export async function applyHosts(): Promise<string> {
-	const { stdout } = await sh('podman compose up -d nginx 2>&1 && podman compose restart nginx');
+	const { stdout } = await sh(`${engine()} compose up -d nginx 2>&1 && ${engine()} compose restart nginx`);
 	return stdout.trim();
 }

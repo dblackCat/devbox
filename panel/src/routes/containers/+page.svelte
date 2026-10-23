@@ -7,6 +7,7 @@
 	import LogViewer from '$lib/components/LogViewer.svelte';
 
 	let containers = $state<Container[]>([]);
+	let engineName = $state('');
 	let expanded = $state<string | null>(null);
 	let busyName = $state('');
 	let error = $state('');
@@ -21,6 +22,7 @@
 		try {
 			const r = await api.containers();
 			containers = r.containers;
+			if (!engineName) engineName = (await api.info()).engine;
 		} catch (e) {
 			error = String(e);
 		}
@@ -78,7 +80,7 @@
 						<td colspan="5" class="p-0 bg-zinc-950/50">
 							<div class="px-3 pt-3 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
 								<CopyField label="вход (just)" value={`just sh ${service}`} />
-								<CopyField label="вход (podman)" value={`podman exec -it ${c.name} bash`} />
+								<CopyField label={`вход (${engineName || 'движок'})`} value={`${engineName || 'podman'} exec -it ${c.name} bash`} />
 							</div>
 							<LogViewer src={`/api/containers/${c.name}/logs`} title={c.name} followable={true} />
 						</td>
