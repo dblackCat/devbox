@@ -11,6 +11,9 @@ services:
       - ./hosts:/var/www
       - ./hosts:/etc/nginx/hosts
       - ./logs/nginx:/var/log/nginx
+    # macOS: имя host.containers.internal не резолвится само (в отличие от Linux+podman)
+    extra_hosts:
+      - "host.containers.internal:host-gateway"
     depends_on:
       - php84
       - php82
@@ -49,6 +52,9 @@ services:
     environment:
       - PHP_VERSION=8.4
       - XDEBUG_MODE=${XDEBUG_MODE:-off}
+    # для xdebug.client_host = host.containers.internal (обязательно на macOS)
+    extra_hosts:
+      - "host.containers.internal:host-gateway"
     ports:
       - "9082:9000"
     networks:
@@ -67,6 +73,9 @@ services:
     environment:
       - PHP_VERSION=8.2
       - XDEBUG_MODE=${XDEBUG_MODE:-off}
+    # для xdebug.client_host = host.containers.internal (обязательно на macOS)
+    extra_hosts:
+      - "host.containers.internal:host-gateway"
     ports:
       - "9081:9000"
     networks:
@@ -85,6 +94,9 @@ services:
     environment:
       - PHP_VERSION=8.0
       - XDEBUG_MODE=${XDEBUG_MODE:-off}
+    # для xdebug.client_host = host.containers.internal (обязательно на macOS)
+    extra_hosts:
+      - "host.containers.internal:host-gateway"
     ports:
       - "9080:9000"
     networks:

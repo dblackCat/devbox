@@ -224,6 +224,18 @@ just host legacy php80     # PHP 8.0
 └── docker-compose.yaml
 ```
 
+## macOS
+
+Окружение ориентировано на Linux (rootless podman), но работает и на macOS
+(podman machine / Docker Desktop). Отличие: на Linux podman сам добавляет
+в контейнеры имя `host.containers.internal`, на macOS — нет, поэтому для nginx
+и php-сервисов в `docker-compose.yaml` прописан `extra_hosts:
+"host.containers.internal:host-gateway"` (nginx проксирует на панель по этому
+имени, xdebug использует его как `client_host`). Не удаляйте эти строки.
+
+Justfile сам выбирает движок: есть `podman` — используется он, иначе `docker`
+(`docker compose`). Можно принудительно задать: `DEVBOX_ENGINE=docker just up`.
+
 ## Восстановление на новой машине
 
 ```bash

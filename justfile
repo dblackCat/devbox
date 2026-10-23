@@ -2,17 +2,20 @@ set dotenv-load
 
 ROOT := justfile_directory()
 
+# Движок: podman или docker. Автоопределение, переопределяется DEVBOX_ENGINE=docker
+engine := if env_var_or_default("DEVBOX_ENGINE", "") != "" { env_var_or_default("DEVBOX_ENGINE", "") } else { if `command -v podman 2>/dev/null` != "" { "podman" } else { "docker" } }
+
 # Короткая справка: просто `just`
 @default:
     @just --list
 
 # Запуск всего стека (nginx перезапускается последним — обновляет IP php-fpm)
 up:
-    podman compose up -d && podman compose restart nginx
+    {{engine}} compose up -d && {{engine}} compose restart nginx
 
 # Остановка стека
 down:
-    podman compose down
+    {{engine}} compose down
 
 # Перезапуск контейнеров
 @restart:
@@ -20,15 +23,15 @@ down:
 
 # Полная пересборка образов
 @build:
-    podman compose build --no-cache && podman compose up -d
+    {{engine}} compose build --no-cache && {{engine}} compose up -d
 
 # Список контейнеров
 ps:
-    podman compose ps
+    {{engine}} compose ps
 
 # Логи контейнера: just logs php82
 logs service:
-    podman compose logs -f {{service}}
+    {{engine}} compose logs -f {{service}}
 
 # Интерактивная сессия в контейнере с маппингом текущего каталога:
 # запущенный из hosts/myproject/htdocs попадёт в /var/www/myproject/htdocs
@@ -39,11 +42,11 @@ sh service="php82":
     workdir="/var/www"
     case "$CALLDIR" in */hosts/*) workdir="/var/www/${CALLDIR#*/hosts/}";; esac
     echo "Контейнер {{service}}, каталог: $workdir"
-    podman compose exec -w "$workdir" {{service}} bash
+    {{engine}} compose exec -w "$workdir" {{service}} bash
 
 # Команда в контейнере: just run php82 "php -v"  |  just run nodejs "npm install"
 run service cmd:
-    podman compose exec {{service}} bash -c "{{cmd}}"
+    {{engine}} compose exec {{service}} bash -c "{{cmd}}"
 
 # Команда в контейнере в текущем каталоге:
 # из hosts/myproject: just in php82 "composer install"
@@ -53,7 +56,7 @@ in service cmd:
     CALLDIR="$PWD"; cd "{{ ROOT }}"
     workdir="/var/www"
     case "$CALLDIR" in */hosts/*) workdir="/var/www/${CALLDIR#*/hosts/}";; esac
-    podman compose exec -w "$workdir" {{service}} bash -c "{{cmd}}"
+    {{engine}} compose exec -w "$workdir" {{service}} bash -c "{{cmd}}"
 
 # Создание нового хоста: just host myproject php80
 @host name php="php82":
@@ -61,7 +64,7 @@ in service cmd:
 
 # Перегенерировать алиасы *.dvl.to для вебхуков между хостами
 @sync:
-    ./scripts/sync-hosts.sh && podman compose up -d nginx
+    ./scripts/sync-hosts.sh && {{engine}} compose up -d nginx
 
 # Перевыпустить SSL-сертификат (wildcard текущей зоны из .env): just ssl [зона]
 @ssl zone="":
@@ -79,7 +82,7 @@ in service cmd:
         esac
     done
     cd ../../..
-    podman compose restart nginx
+    {{engine}} compose restart nginx
     echo "Сертификат *.${Z} выпущен, nginx перезапущен"
 
 # Скопировать AI.md в проект (для работы ИИ-ассистента внутри хоста)
@@ -123,19 +126,19 @@ panel-logs:
 
 # MySQL-клиент
 sql:
-    podman compose exec mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD:-root}"
+    {{engine}} compose exec mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD:-root}"
 
 # PostgreSQL-клиент
 psql:
-    podman compose exec postgres psql -U postgres
+    {{engine}} compose exec postgres psql -U postgres
 
 # Redis-клиент
 redis:
-    podman compose exec redis redis-cli
+    {{engine}} compose exec redis redis-cli
 
 # Включить/выключить Xdebug в .env и перезапустить PHP-контейнеры
 xdebug mode="debug":
     #!/usr/bin/env bash
     if [ "{{mode}}" = "off" ]; then sed -i 's/^XDEBUG_MODE=.*/XDEBUG_MODE=off/' .env; else sed -i 's/^XDEBUG_MODE=.*/XDEBUG_MODE={{mode}}/' .env; grep -q '^XDEBUG_MODE=' .env || echo "XDEBUG_MODE={{mode}}" >> .env; fi
     grep '^XDEBUG_MODE=' .env
-    podman compose up -d php80 php82 php84
+    {{engine}} compose up -d php80 php82 php84

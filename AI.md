@@ -16,6 +16,8 @@
 ## Выполнение команд
 
 Все `podman compose` — из `~/Workspace/Server`. Пароль БД — из `~/Workspace/Server/.env`.
+В justfile движок определяется автоматически (podman, иначе docker; переопределяется
+переменной `DEVBOX_ENGINE`), так что `just up` и остальные рецепты работают в обоих случаях.
 
 ```bash
 export DOCKER_HOST=unix:///run/user/1000/podman/podman.sock
@@ -86,4 +88,7 @@ podman compose exec php82 php -r 'var_dump(@file_get_contents("https://<other>.d
   `cd ~/Workspace/Server && podman compose restart nginx`.
 - **Permission denied на запись** — файл принадлежит не пользователю; сообщи владельцу,
   chown сам сделать не можешь (sudo нет).
+- **host not found in upstream "host.containers.internal"** (на macOS) — не резолвится
+  имя хоста: в `docker-compose.yaml` для nginx/php должны быть `extra_hosts:
+  "host.containers.internal:host-gateway"` (на Linux podman добавляет его сам).
 - **Ошибки приложения при пустой БД** — сверить, залит ли дамп (логи: `logs/php<ver>/` на хосте).
