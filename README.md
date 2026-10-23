@@ -143,9 +143,19 @@ sudo update-ca-trust
 | Redis 7 | 6379 | persistence в `./data/redis` |
 | Manticore | 9306, 9308 | |
 | PHP-FPM | 9080 (8.0), 9081 (8.2), 9082 (8.4) | |
+| S3 (SeaweedFS) | 9000 | S3-совместимое хранилище; доступы в `config/seaweedfs/s3.json`, данные в `./data/s3` |
 
 Внутри сети контейнеры доступны по alias'ам: `mysql`/`db`, `postgres`/`pg`,
-`redis`, `mailpit` (также `mailhog`), `php82` и т.д.
+`redis`, `mailpit` (также `mailhog`), `s3`, `php82` и т.д.
+
+### S3 (SeaweedFS)
+
+Self-hosted S3-хранилище для файлов проектов (вложения чатов и т.п.).
+MinIO не используется: с 2025 их образы закрыты для публичного скачивания.
+Доступы по умолчанию: `devbox` / `devbox-secret` (`config/seaweedfs/s3.json`,
+перезапуск: `just down && just up` или `podman compose restart s3`).
+Клиенты проектов настраивают endpoint сами (для контейнеров — `http://s3:9000`,
+с хоста — `http://127.0.0.1:9000`).
 
 ### Вебхуки между хостами (из контейнера в контейнер)
 

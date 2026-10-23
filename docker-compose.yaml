@@ -175,6 +175,34 @@ services:
           - mailpit
           - mailhog   # совместимость со старыми настройками проектов
 
+  # S3-хранилище (S3-совместимое, SeaweedFS) для файлов проектов (чат-вложения и т.п.)
+  # MinIO не используется: образы закрыты для публичного скачивания с 2025.
+  s3:
+    image: docker.io/chrislusf/seaweedfs:3.89
+    restart: unless-stopped
+    command:
+      - server
+      - -dir=/data
+      - -ip=s3
+      - -master.volumeSizeLimitMB=2048
+      - -s3
+      - -s3.port=8333
+      - -s3.config=/etc/seaweedfs/s3.json
+    ports:
+      - "${S3_PORT:-9000}:8333"
+    volumes:
+      - ./data/s3:/data
+      - ./config/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+    healthcheck:
+      test: ["CMD", "weed", "shell", "-master=localhost:9333", "-cluster=healthcheck", "-command=cluster.health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    networks:
+      app-network:
+        aliases:
+          - s3
+
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     ports:

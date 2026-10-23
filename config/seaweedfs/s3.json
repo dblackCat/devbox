@@ -1,0 +1,11 @@
+{
+  "identities": [
+    {
+      "name": "devbox-admin",
+      "credentials": [
+        { "accessKey": "devbox", "secretKey": "devbox-secret" }
+      ],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

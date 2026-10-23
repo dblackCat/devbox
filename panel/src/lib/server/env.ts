@@ -24,6 +24,17 @@ export interface ToolLink {
 	creds: { k: string; v: string }[];
 }
 
+/** Реквизиты S3 (SeaweedFS) из config/seaweedfs/s3.json */
+function s3Creds(): { user: string; password: string } {
+	try {
+		const file = path.join(SERVER_ROOT, 'config', 'seaweedfs', 's3.json');
+		const json = JSON.parse(fs.readFileSync(file, 'utf-8'));
+		const c = json.identities?.[0]?.credentials?.[0];
+		if (c) return { user: c.accessKey, password: c.secretKey };
+	} catch { /* файла нет — дефолты */ }
+	return { user: 'devbox', password: 'devbox-secret' };
+}
+
 /** Сводка для dashboard: ссылки, порты, реквизиты */
 export function info() {
 	const env = readEnv();
@@ -104,6 +115,15 @@ export function info() {
 				user: '—',
 				password: '—',
 				note: 'поиск'
+			},
+			{
+				id: 's3',
+				title: 'S3 (SeaweedFS)',
+				host: 's3',
+				port: p('S3_PORT', 9000),
+				user: s3Creds().user,
+				password: s3Creds().password,
+				note: 'S3-совместимое хранилище файлов; с хоста — http://127.0.0.1:' + p('S3_PORT', 9000)
 			}
 		]
 	};
