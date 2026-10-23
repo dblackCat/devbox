@@ -62,7 +62,8 @@ Bucket создаёт само приложение при настройке.
 
 http://localhost (тёмная, SvelteKit): статус/логи контейнеров, реквизиты сервисов,
 создание хостов, управление окружением. Код в `panel/`, конвенции — `panel/AGENTS.md`.
-Рецепты: `just panel-install` / `panel-restart` / `panel-logs`.
+Рецепты: `just panel-install` / `panel-restart` / `panel-logs`; на macOS панель
+поднимается автоматически при `just up` (или `just panel-run` в форграунде).
 
 ## Отладка (Xdebug)
 

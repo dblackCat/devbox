@@ -236,9 +236,9 @@ just host legacy php80     # PHP 8.0
 Justfile сам выбирает движок: есть `podman` — используется он, иначе `docker`
 (`docker compose`). Можно принудительно задать `ENGINE=docker` в `.env`.
 Панель тоже учитывает `ENGINE` (или автоопределяет) — все её действия
-работают с обоими движками. systemd user-сервисов на macOS нет, поэтому панель
-там запускается в форграунде: `just panel-run` (или вручную
-`cd panel && npm run build && PORT=8989 HOST=0.0.0.0 node build`).
+работают с обоими движками. systemd user-сервисов на macOS нет: `just up`
+сам поднимает панель (systemd-юнит на Linux, иначе фоновый `node build`
+с логом в `logs/panel.log`); вручную можно запустить `just panel-run`.
 
 ## Восстановление на новой машине
 

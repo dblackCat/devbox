@@ -9,9 +9,21 @@ engine := if env_var_or_default("ENGINE", "") != "" { env_var_or_default("ENGINE
 @default:
     @just --list
 
-# Запуск всего стека (nginx перезапускается последним — обновляет IP php-fpm)
-up:
+# Запуск всего стека (nginx перезапускается последним — обновляет IP php-fpm; панель стартует вместе со стеком)
+@up:
+    #!/usr/bin/env bash
     {{engine}} compose up -d && {{engine}} compose restart nginx
+    # панель: если порт не слушается — запустить в фоне (на Linux обычно уже работает systemd-юнит)
+    PORT=$(grep '^PANEL_PORT=' .env | cut -d= -f2); PORT=${PORT:-8989}
+    if ! (exec 3<>/dev/tcp/127.0.0.1/"$PORT") 2>/dev/null; then
+        if command -v systemctl >/dev/null && systemctl --user is-enabled devbox-panel.service >/dev/null 2>&1; then
+            systemctl --user enable --now devbox-panel.service && echo "Панель: systemd-юнит запущен"
+        else
+            cd panel && [ -d build ] || { npm install && npm run build; }
+            nohup env HOST=0.0.0.0 PORT="$PORT" node build >> ../logs/panel.log 2>&1 &
+            echo "Панель запущена в фоне: http://localhost:$PORT (лог: logs/panel.log)"
+        fi
+    fi
 
 # Остановка стека
 down:
