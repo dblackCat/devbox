@@ -84,9 +84,19 @@ box             # список всех рецептов
 
 ## HTTPS
 
-Все хосты доступны и по https (`https://*.dvl.to`) — wildcard-сертификат
-от локального CA (mkcert), лежит в `config/nginx/ssl/` (до 01.2029).
+Все хосты доступны и по https (`https://*.<зона>`) — wildcard-сертификат
+от локального CA (mkcert), лежит в `config/nginx/ssl/` (`dvl.to.pem`/`dvl.to.key`
+— имена фиксированные, независимо от зоны).
 Новые хосты из `just host` получают 443 автоматически.
+
+**Сертификаты не хранятся в git** — они привязаны к машине (локальный CA) и к
+зоне из `HOST_ZONE`. После клона на новой машине выпустите свои:
+
+```bash
+brew install mkcert nss   # macOS; на Linux mkcert ставится пакетным менеджером
+mkcert -install           # доверить свой CA системе и Firefox
+just ssl                  # выпустить wildcard для зоны из .env (HOST_ZONE)
+```
 
 Доверие сертификату (один раз на машине):
 
@@ -102,29 +112,20 @@ sudo update-ca-trust
 
 #### Доверие сертификату в macOS
 
-На маке CA mkcert лежит не в `~/.local/share/mkcert/`, а в `$(mkcert -CAROOT)`
-(обычно `~/Library/Application Support/mkcert`). Проще всего доверить его
-штатным способом:
+На маке mkcert ставится через brew, CA лежит в `$(mkcert -CAROOT)`
+(обычно `~/Library/Application Support/mkcert`):
 
 ```bash
 brew install mkcert nss   # nss — чтобы mkcert прописал CA и в Firefox
 mkcert -install           # добавляет CA в системное хранилище (Keychain) и Firefox
+just ssl                  # выпустить wildcard для своей зоны (HOST_ZONE из .env)
 ```
 
-Если mkcert уже использовался на Linux-машине и сертификаты выпущены там,
-`mkcert -install` на маке создаст **другой** CA и `https` останется «недоверенным».
-Тогда скопируйте rootCA с Linux-машины и доверьте вручную:
-
-```bash
-# скопировать с Linux-машины: ~/.local/share/mkcert/rootCA.pem
-CAROOT=$(mkcert -CAROOT)   # ~/Library/Application Support/mkcert
-mkdir -p "$CAROOT" && cp rootCA.pem "$CAROOT/"
-sudo security add-trusted-cert -d -r trustRoot \
-  -k /Library/Keychains/System.keychain "$CAROOT/rootCA.pem"
-```
-
-После этого перезапустить браузер. Проверка: открыть `https://<проект>.dvl.to` —
-замок без предупреждений (для Firefox — см. импорт через настройки выше).
+Поскольку сертификаты теперь выпускаются локально на каждой машине,
+`mkcert -install` + `just ssl` — весь процесс: браузер увидит
+`https://<проект>.<зона>` без предупреждений после перезапуска браузера.
+(Если когда-то доверяли чужой rootCA вручную — его можно удалить в
+Keychain Access → System.)
 
 ### Смена зоны (HOST_ZONE в .env)
 
@@ -270,9 +271,10 @@ Justfile сам выбирает движок: есть `podman` — испол�
 
 ```bash
 git clone <repo> && cd server
-systemctl --user enable --now podman.socket
-cp .env.example .env
+cp .env.example .env          # настроить ENGINE, HOST_ZONE, порты
+just ssl                      # выпустить wildcard-сертификат под свою зону (нужен mkcert)
 just build
 ```
 
+На Linux дополнительно: `systemctl --user enable --now podman.socket`.
 Данные БД не переносятся автоматически — делайте дампы (`just sql` / `just psql`).

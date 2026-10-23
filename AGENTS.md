@@ -31,7 +31,8 @@
 - `hosts/<proj>/` ↔ `/var/www/<proj>/`; vhost = `hosts/<proj>/nginx.conf` (http+https, mkcert).
 - Алиасы `*.dvl.to` для сети генерирует `scripts/sync-hosts.sh` → `docker-compose.aliases.yaml`
   (подключён через `COMPOSE_FILE`); после правок `hosts/` — `just sync`.
-- SSL: `config/nginx/ssl/` (mkcert, до 2029), CA — `~/.local/share/mkcert/rootCA.pem`.
+- SSL: `config/nginx/ssl/` (mkcert; сертификаты не в git — каждая машина
+  выпускает свои через `just ssl` под зону из `HOST_ZONE`).
 - Данные сервисов — `data/*`, логи — `logs/*`.
 
 ## Грабли, которые уже наступлены
