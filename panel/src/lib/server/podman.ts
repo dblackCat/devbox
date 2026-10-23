@@ -1,5 +1,5 @@
 import { sh } from './sh';
-import { engine } from './engine';
+import { engine, project, containerNameRe } from './engine';
 
 export interface Container {
 	name: string;
@@ -12,7 +12,7 @@ export interface Container {
 /** Список контейнеров окружения (server-*) */
 export async function listContainers(): Promise<Container[]> {
 	const { stdout } = await sh(
-		`${engine()} ps -a --filter name=server- --format '{{.Names}}\\t{{.Image}}\\t{{.State}}\\t{{.Status}}\\t{{.Ports}}'`
+		`${engine()} ps -a --filter name=${project()}- --format '{{.Names}}\\t{{.Image}}\\t{{.State}}\\t{{.Status}}\\t{{.Ports}}'`
 	);
 	return stdout
 		.split('\n')
@@ -32,7 +32,7 @@ export async function listContainers(): Promise<Container[]> {
 
 /** Действие над контейнером */
 export async function containerAction(name: string, action: string) {
-	if (!/^server-[a-z0-9-]+$/.test(name) || !['start', 'stop', 'restart'].includes(action)) {
+	if (!containerNameRe().test(name) || !['start', 'stop', 'restart'].includes(action)) {
 		throw new Error('bad request');
 	}
 	await sh(`${engine()} ${action} ${name}`);

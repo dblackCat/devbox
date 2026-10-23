@@ -95,7 +95,7 @@
 			class="flex items-center gap-3 px-3.5 py-2 hover:bg-zinc-900/60 transition-colors"
 		>
 			<StatusBadge state={c.state} />
-			<span class="text-sm text-zinc-300">{c.name.replace(/^server-/, '').replace(/-1$/, '')}</span>
+			<span class="text-sm text-zinc-300">{c.name.replace(/^[^-]+-/, '').replace(/-1$/, '')}</span>
 			<span class="mono text-xs text-zinc-600 truncate hidden md:inline">{c.image.replace('docker.io/library/', '')}</span>
 			<span class="flex-1"></span>
 			<span class="mono text-xs text-zinc-500">{c.status}</span>

@@ -17,7 +17,7 @@
 		busy?: boolean;
 	} = $props();
 
-	const short = $derived(container.name.replace(/^server-/, '').replace(/-1$/, ''));
+	const short = $derived(container.name.replace(/^[^-]+-/, '').replace(/-1$/, ''));
 </script>
 
 <tr

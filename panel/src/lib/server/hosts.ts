@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { sh, SERVER_ROOT } from './sh';
 import { listContainers } from './podman';
-import { engine } from './engine';
+import { engine, project } from './engine';
 
 export interface Host {
 	name: string;
@@ -15,7 +15,7 @@ export async function phpVersions(): Promise<string[]> {
 	const containers = await listContainers();
 	const versions = new Set<string>();
 	for (const c of containers) {
-		const m = c.name.match(/^server-php(\d+)-\d+$/);
+		const m = c.name.match(new RegExp(`^${project()}-php(\\d+)-\\d+$`));
 		if (m) versions.add(m[1]);
 	}
 	return [...versions].sort();

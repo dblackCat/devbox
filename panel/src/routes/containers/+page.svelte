@@ -75,7 +75,7 @@
 					onaction={(a) => action(c.name, a)}
 				/>
 				{#if expanded === c.name}
-					{@const service = c.name.replace(/^server-/, '').replace(/-1$/, '')}
+					{@const service = c.name.replace(/^[^-]+-/, '').replace(/-1$/, '')}
 					<tr class="border-t border-zinc-800/80">
 						<td colspan="5" class="p-0 bg-zinc-950/50">
 							<div class="px-3 pt-3 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">

@@ -1,11 +1,11 @@
 import { sh } from '$lib/server/sh';
-import { engine } from '$lib/server/engine';
+import { engine, containerNameRe } from '$lib/server/engine';
 import type { RequestHandler } from './$types';
 
 /** Логи контейнера: ?tail=200 — срез, ?follow=1 — SSE-стрим */
 export const GET: RequestHandler = async ({ params, url, request }) => {
 	const name = params.name!;
-	if (!/^server-[a-z0-9-]+$/.test(name)) return new Response('bad name', { status: 400 });
+	if (!containerNameRe().test(name)) return new Response('bad name', { status: 400 });
 	const tail = url.searchParams.get('tail') ?? '200';
 
 	if (url.searchParams.get('follow')) {
