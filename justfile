@@ -19,7 +19,7 @@ engine := if env_var_or_default("ENGINE", "") != "" { env_var_or_default("ENGINE
         if command -v systemctl >/dev/null && systemctl --user is-enabled devbox-panel.service >/dev/null 2>&1; then
             systemctl --user enable --now devbox-panel.service && echo "Панель: systemd-юнит запущен"
         else
-            cd panel && [ -d build ] || { npm install && npm run build; }
+            cd panel && npm install && npm run build
             nohup env HOST=0.0.0.0 PORT="$PORT" node build >> ../logs/panel.log 2>&1 &
             echo "Панель запущена в фоне: http://localhost:$PORT (лог: logs/panel.log)"
         fi
@@ -132,7 +132,7 @@ ai name:
 @panel-run:
     #!/usr/bin/env bash
     cd panel
-    [ -d build ] || { npm install && npm run build; }
+    npm install && npm run build
     PORT=$(grep '^PANEL_PORT=' ../.env | cut -d= -f2); PORT=${PORT:-8989}
     echo "Панель: http://localhost:${PORT} (Ctrl+C — остановка)"
     HOST=0.0.0.0 PORT="$PORT" node build

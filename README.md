@@ -100,6 +100,32 @@ sudo update-ca-trust
 # галочка "Trust this CA to identify websites"
 ```
 
+#### Доверие сертификату в macOS
+
+На маке CA mkcert лежит не в `~/.local/share/mkcert/`, а в `$(mkcert -CAROOT)`
+(обычно `~/Library/Application Support/mkcert`). Проще всего доверить его
+штатным способом:
+
+```bash
+brew install mkcert nss   # nss — чтобы mkcert прописал CA и в Firefox
+mkcert -install           # добавляет CA в системное хранилище (Keychain) и Firefox
+```
+
+Если mkcert уже использовался на Linux-машине и сертификаты выпущены там,
+`mkcert -install` на маке создаст **другой** CA и `https` останется «недоверенным».
+Тогда скопируйте rootCA с Linux-машины и доверьте вручную:
+
+```bash
+# скопировать с Linux-машины: ~/.local/share/mkcert/rootCA.pem
+CAROOT=$(mkcert -CAROOT)   # ~/Library/Application Support/mkcert
+mkdir -p "$CAROOT" && cp rootCA.pem "$CAROOT/"
+sudo security add-trusted-cert -d -r trustRoot \
+  -k /Library/Keychains/System.keychain "$CAROOT/rootCA.pem"
+```
+
+После этого перезапустить браузер. Проверка: открыть `https://<проект>.dvl.to` —
+замок без предупреждений (для Firefox — см. импорт через настройки выше).
+
 ### Смена зоны (HOST_ZONE в .env)
 
 Зона учитывается скриптами и панелью, но после её смены нужно:

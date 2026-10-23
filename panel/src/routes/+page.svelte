@@ -11,6 +11,7 @@
 	let xdebugMode = $state('off');
 	let engineName = $state('');
 	let xdebugBusy = $state(false);
+	let error = $state('');
 
 	onMount(load);
 
@@ -20,8 +21,13 @@
 		connections = info.connections;
 		xdebugMode = info.xdebugMode;
 		engineName = info.engine;
-		const { containers: c } = await api.containers();
-		containers = c;
+		try {
+			const { containers: c } = await api.containers();
+			containers = c;
+			error = '';
+		} catch (e) {
+			error = String(e);
+		}
 	}
 
 	async function toggleXdebug() {
@@ -56,6 +62,9 @@
 		Xdebug: {xdebugBusy ? '…' : xdebugMode} ⇄
 	</button>
 	<span class="flex-1"></span>
+	{#if error}
+		<span class="badge badge-down" title={error}>ошибка списка контейнеров</span>
+	{/if}
 	<span class="text-xs text-zinc-600">окружение · {engineName || '…'} compose</span>
 </div>
 
