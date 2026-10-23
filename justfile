@@ -2,8 +2,8 @@ set dotenv-load
 
 ROOT := justfile_directory()
 
-# Движок: podman или docker. Автоопределение, переопределяется DEVBOX_ENGINE=docker
-engine := if env_var_or_default("DEVBOX_ENGINE", "") != "" { env_var_or_default("DEVBOX_ENGINE", "") } else { if `command -v podman 2>/dev/null` != "" { "podman" } else { "docker" } }
+# Движок: podman или docker. Берётся из ENGINE в .env, иначе автоопределение
+engine := if env_var_or_default("ENGINE", "") != "" { env_var_or_default("ENGINE", "") } else { if `command -v podman 2>/dev/null || true` != "" { "podman" } else { "docker" } }
 
 # Короткая справка: просто `just`
 @default:
