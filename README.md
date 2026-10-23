@@ -267,6 +267,23 @@ Justfile сам выбирает движок: есть `podman` — испол�
 сам поднимает панель (systemd-юнит на Linux, иначе фоновый `node build`
 с логом в `logs/panel.log`); вручную можно запустить `just panel-run`.
 
+### Just из любого каталога
+
+Чтобы управлять окружением (`just up` и т.д.) не заходя в каталог Server,
+добавьте алиас в shell:
+
+```bash
+brew install just   # macOS; на Linux — пакетным менеджером
+
+# ~/.bashrc (Linux) или ~/.zshrc (macOS, shell по умолчанию zsh)
+alias box='just --justfile "$HOME/Workspace/Server/justfile" --working-directory "$HOME/Workspace/Server"'
+alias boxhere='just --justfile "$HOME/Workspace/Server/justfile"'
+```
+
+После `source ~/.zshrc` (или перелогина): `box up`, `box ps`, `box logs nginx` —
+из любого места. Рецепты `sh`/`in` маппят текущий каталог хоста в контейнер —
+для них запускайте `boxhere sh php82` из каталога проекта (`hosts/<proj>/...`).
+
 ## Восстановление на новой машине
 
 ```bash
