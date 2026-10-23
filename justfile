@@ -116,6 +116,15 @@ ai name:
     systemctl --user daemon-reload && systemctl --user enable --now devbox-panel.service
     echo "Панель: http://localhost (порт ${PORT})"
 
+# Запуск панели в форграунде (для macOS, где нет systemd user-сервисов)
+@panel-run:
+    #!/usr/bin/env bash
+    cd panel
+    [ -d build ] || { npm install && npm run build; }
+    PORT=$(grep '^PANEL_PORT=' ../.env | cut -d= -f2); PORT=${PORT:-8989}
+    echo "Панель: http://localhost:${PORT} (Ctrl+C — остановка)"
+    HOST=0.0.0.0 PORT="$PORT" node build
+
 # Перезапуск панели (после правок кода + panel-install)
 panel-restart:
     cd panel && npm run build && systemctl --user restart devbox-panel
